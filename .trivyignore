@@ -1,0 +1,4 @@
+# CVE-2026-25679: net/url IPv6 parsing issue in Go stdlib
+# Fixed in Go 1.25.8 / 1.26.1 — not yet available in golang:1.24-alpine
+# Expires: 2026-06-01
+CVE-2026-25679
