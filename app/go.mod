@@ -1,3 +1,3 @@
 module github.com/devsecops-pipeline/app
 
-go 1.22
+go 1.24

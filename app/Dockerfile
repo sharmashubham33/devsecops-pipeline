@@ -7,7 +7,7 @@
 # - CGO disabled for static binary
 # - Build stage is discarded
 
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 COPY go.mod ./
