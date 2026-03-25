@@ -68,7 +68,9 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		logger.Error("failed to encode health response", "error", err)
+	}
 }
 
 func createOrderHandler(w http.ResponseWriter, r *http.Request) {
@@ -117,17 +119,21 @@ func createOrderHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		logger.Error("failed to encode order response", "error", err)
+	}
 }
 
 func writeError(w http.ResponseWriter, code int, message, details string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(ErrorResponse{
+	if err := json.NewEncoder(w).Encode(ErrorResponse{
 		Error:   message,
 		Code:    code,
 		Details: details,
-	})
+	}); err != nil {
+		logger.Error("failed to encode error response", "error", err)
+	}
 }
 
 func loggingMiddleware(next http.Handler) http.Handler {
