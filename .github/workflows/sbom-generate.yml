@@ -1,27 +1,19 @@
 # Stage 4: SBOM Generation
 # Creates a Software Bill of Materials listing every dependency in the image.
-# Required for supply chain security and regulatory compliance.
-#
-# Steps:
-# 1. Syft generates SBOM in SPDX format
-# 2. SBOM is attached to the container image as an attestation
 #
 # SOC2 mapping: CC3.1 (risk assessment), CC7.2 (vulnerability management)
-# Also satisfies Executive Order 14028 (US government software supply chain requirements)
 
 name: SBOM - Software Bill of Materials
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'app/**'
+  workflow_dispatch:
 
 permissions:
   contents: read
-  packages: read
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   sbom:
@@ -31,8 +23,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build image for SBOM scan
-        run: |
-          docker build -t devsecops-demo:${{ github.sha }} ./app
+        run: docker build -t devsecops-demo:${{ github.sha }} ./app
 
       - name: Install Syft
         uses: anchore/sbom-action/download-syft@v0
@@ -50,12 +41,11 @@ jobs:
       - name: SBOM Summary
         run: |
           echo "=== SBOM Summary ==="
-          echo "SPDX packages:"
-          cat sbom-spdx.json | python3 -c "
-          import json, sys
-          data = json.load(sys.stdin)
+          python3 -c "
+          import json
+          data = json.load(open('sbom-spdx.json'))
           pkgs = data.get('packages', [])
-          print(f'  Total packages: {len(pkgs)}')
+          print(f'Total packages: {len(pkgs)}')
           for p in pkgs[:10]:
               print(f'  - {p.get(\"name\", \"unknown\")} {p.get(\"versionInfo\", \"\")}')
           if len(pkgs) > 10:
@@ -69,11 +59,3 @@ jobs:
           path: |
             sbom-spdx.json
             sbom-cyclonedx.json
-
-      # In production, you'd also attach the SBOM to the image:
-      # - name: Attach SBOM attestation
-      #   run: |
-      #     cosign attest --yes \
-      #       --predicate sbom-spdx.json \
-      #       --type spdxjson \
-      #       ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}

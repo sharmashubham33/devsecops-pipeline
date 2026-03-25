@@ -4,7 +4,7 @@
 # Steps:
 # 1. Lint (golangci-lint) — catches style issues, bugs, complexity
 # 2. Unit tests with coverage — ensures code works and tracks coverage
-# 3. SAST (SonarQube) — static analysis for security vulnerabilities
+# 3. SAST (SonarQube) — requires SONAR_TOKEN secret (manual trigger)
 #
 # SOC2 mapping: CC7.1 (monitoring), CC8.1 (change management)
 
@@ -57,8 +57,11 @@ jobs:
         run: |
           COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
           echo "Total coverage: ${COVERAGE}%"
-          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
-            echo "::error::Coverage ${COVERAGE}% is below 80% threshold"
+          THRESHOLD=80
+          # Use awk for float comparison (bc may not be available)
+          PASS=$(awk "BEGIN {print ($COVERAGE >= $THRESHOLD) ? 1 : 0}")
+          if [ "$PASS" -eq 0 ]; then
+            echo "::error::Coverage ${COVERAGE}% is below ${THRESHOLD}% threshold"
             exit 1
           fi
 
@@ -68,15 +71,31 @@ jobs:
           name: coverage-report
           path: app/coverage.out
 
+  gosec:
+    name: Go Security Scanner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Run gosec
+        uses: securego/gosec@master
+        with:
+          args: ./app/...
+
+  # SonarQube SAST — only runs when SONAR_TOKEN is configured.
+  # To enable: add SONAR_TOKEN and SONAR_HOST_URL as repository secrets.
   sast:
     name: SAST (SonarQube)
     runs-on: ubuntu-latest
-    # SonarQube requires SONAR_TOKEN and SONAR_HOST_URL secrets configured
-    # In a real setup, SonarQube runs as a service or uses SonarCloud
+    if: ${{ vars.SONAR_ENABLED == 'true' }}
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for accurate blame
+          fetch-depth: 0
 
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@v3
@@ -96,19 +115,3 @@ jobs:
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  # Security-focused static analysis as a fallback when SonarQube isn't configured
-  gosec:
-    name: Go Security Scanner
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.22"
-
-      - name: Run gosec
-        uses: securego/gosec@master
-        with:
-          args: ./app/...
