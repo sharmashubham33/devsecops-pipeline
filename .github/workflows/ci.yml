@@ -1,0 +1,114 @@
+# Stage 1: Continuous Integration
+# Runs on every push and PR. Catches code quality issues before they merge.
+#
+# Steps:
+# 1. Lint (golangci-lint) — catches style issues, bugs, complexity
+# 2. Unit tests with coverage — ensures code works and tracks coverage
+# 3. SAST (SonarQube) — static analysis for security vulnerabilities
+#
+# SOC2 mapping: CC7.1 (monitoring), CC8.1 (change management)
+
+name: CI - Lint, Test, SAST
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.61
+          working-directory: app
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Run tests with coverage
+        working-directory: app
+        run: |
+          go test -v -race -coverprofile=coverage.out ./...
+          go tool cover -func=coverage.out
+
+      - name: Check coverage threshold (80%)
+        working-directory: app
+        run: |
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Total coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "::error::Coverage ${COVERAGE}% is below 80% threshold"
+            exit 1
+          fi
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: app/coverage.out
+
+  sast:
+    name: SAST (SonarQube)
+    runs-on: ubuntu-latest
+    # SonarQube requires SONAR_TOKEN and SONAR_HOST_URL secrets configured
+    # In a real setup, SonarQube runs as a service or uses SonarCloud
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for accurate blame
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v3
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=devsecops-pipeline
+            -Dsonar.sources=app/
+            -Dsonar.tests=app/
+            -Dsonar.test.inclusions=**/*_test.go
+            -Dsonar.go.coverage.reportPaths=app/coverage.out
+
+      - name: SonarQube Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@v1
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # Security-focused static analysis as a fallback when SonarQube isn't configured
+  gosec:
+    name: Go Security Scanner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Run gosec
+        uses: securego/gosec@master
+        with:
+          args: ./app/...

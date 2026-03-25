@@ -1,0 +1,45 @@
+# Local DevSecOps infrastructure.
+# Spins up SonarQube and Vault for local pipeline testing.
+
+services:
+  # --- Application ---
+  app:
+    build: ./app
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_VERSION=1.0.0
+
+  # --- SonarQube for SAST ---
+  sonarqube:
+    image: sonarqube:10-community
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonarqube-data:/opt/sonarqube/data
+      - sonarqube-logs:/opt/sonarqube/logs
+    # Default credentials: admin/admin
+
+  # --- HashiCorp Vault for secrets ---
+  vault:
+    image: hashicorp/vault:1.17.6
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+
+  # --- OPA for policy decisions (optional — conftest runs standalone) ---
+  opa:
+    image: openpolicyagent/opa:0.70.0
+    ports:
+      - "8181:8181"
+    command: ["run", "--server", "--addr", "0.0.0.0:8181"]
+
+volumes:
+  sonarqube-data:
+  sonarqube-logs:

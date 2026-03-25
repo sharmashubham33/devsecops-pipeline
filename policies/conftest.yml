@@ -1,0 +1,7 @@
+# Conftest configuration for policy testing.
+# Conftest uses OPA/Rego under the hood but provides a better CLI
+# for testing structured data (YAML, JSON, Dockerfile, HCL).
+
+policy: policies/rego
+namespace: dockerfile
+output: table

@@ -1,0 +1,74 @@
+{
+  "_comment": "Example SonarQube analysis report. In a real pipeline, SonarQube generates this after scanning the codebase.",
+  "projectKey": "devsecops-pipeline",
+  "qualityGate": {
+    "status": "OK",
+    "conditions": [
+      {
+        "metric": "new_reliability_rating",
+        "operator": "GT",
+        "value": "1",
+        "status": "OK",
+        "errorThreshold": "1"
+      },
+      {
+        "metric": "new_security_rating",
+        "operator": "GT",
+        "value": "1",
+        "status": "OK",
+        "errorThreshold": "1"
+      },
+      {
+        "metric": "new_coverage",
+        "operator": "LT",
+        "value": "85.7",
+        "status": "OK",
+        "errorThreshold": "80"
+      },
+      {
+        "metric": "new_duplicated_lines_density",
+        "operator": "GT",
+        "value": "0.0",
+        "status": "OK",
+        "errorThreshold": "3"
+      }
+    ]
+  },
+  "measures": {
+    "lines_of_code": 245,
+    "coverage": "85.7%",
+    "duplicated_lines_density": "0.0%",
+    "code_smells": 2,
+    "bugs": 0,
+    "vulnerabilities": 0,
+    "security_hotspots": 1,
+    "security_hotspots_reviewed": "100%",
+    "reliability_rating": "A",
+    "security_rating": "A",
+    "maintainability_rating": "A"
+  },
+  "issues": [
+    {
+      "severity": "INFO",
+      "type": "CODE_SMELL",
+      "message": "Remove this unnecessary variable declaration",
+      "component": "app/main.go",
+      "line": 42
+    },
+    {
+      "severity": "INFO",
+      "type": "CODE_SMELL",
+      "message": "Rename this function parameter to match naming convention",
+      "component": "app/main.go",
+      "line": 78
+    },
+    {
+      "severity": "LOW",
+      "type": "SECURITY_HOTSPOT",
+      "message": "Make sure that using pseudorandom number generator is safe here",
+      "component": "app/main.go",
+      "line": 95,
+      "resolution": "SAFE — used for non-security order ID generation only"
+    }
+  ]
+}

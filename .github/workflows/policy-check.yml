@@ -1,0 +1,67 @@
+# Stage 3: Policy Enforcement
+# Validates Kubernetes manifests and Dockerfiles against OPA/Rego policies.
+# This is the "compliance gate" — code that violates policies cannot deploy.
+#
+# Steps:
+# 1. Conftest validates Dockerfile against container policies
+# 2. Conftest validates K8s manifests against deployment policies
+#
+# SOC2 mapping: CC6.1 (logical access), CC6.6 (system boundaries)
+
+name: Policy Check - OPA/Conftest
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  policy-check:
+    name: OPA Policy Enforcement
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Conftest
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/open-policy-agent/conftest/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
+          wget -q "https://github.com/open-policy-agent/conftest/releases/download/v${LATEST}/conftest_${LATEST}_Linux_x86_64.tar.gz"
+          tar xzf conftest_*.tar.gz
+          sudo mv conftest /usr/local/bin/
+
+      - name: Validate Dockerfile policies
+        run: |
+          echo "Checking Dockerfile against security policies..."
+          conftest test app/Dockerfile \
+            --policy policies/rego \
+            --namespace dockerfile \
+            --output table
+
+      # In a full setup, you'd also validate K8s manifests:
+      # - name: Validate Kubernetes manifests
+      #   run: |
+      #     conftest test k8s/*.yaml \
+      #       --policy policies/rego \
+      #       --namespace kubernetes \
+      #       --output table
+
+  policy-test:
+    name: OPA Policy Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Conftest
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/open-policy-agent/conftest/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
+          wget -q "https://github.com/open-policy-agent/conftest/releases/download/v${LATEST}/conftest_${LATEST}_Linux_x86_64.tar.gz"
+          tar xzf conftest_*.tar.gz
+          sudo mv conftest /usr/local/bin/
+
+      - name: Run policy unit tests
+        run: |
+          conftest verify --policy policies/rego

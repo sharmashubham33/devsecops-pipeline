@@ -1,0 +1,35 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "devsecops-demo",
+  "documentNamespace": "https://example.com/devsecops-demo-sbom",
+  "creationInfo": {
+    "created": "2024-01-15T10:30:00Z",
+    "creators": ["Tool: syft-1.16.0"],
+    "licenseListVersion": "3.22"
+  },
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-go-stdlib",
+      "name": "stdlib",
+      "versionInfo": "go1.22.0",
+      "supplier": "Organization: Google",
+      "downloadLocation": "https://go.dev/dl/",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-distroless",
+      "name": "distroless-static-debian12",
+      "versionInfo": "nonroot",
+      "supplier": "Organization: Google",
+      "downloadLocation": "https://github.com/GoogleContainerTools/distroless",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0"
+    }
+  ],
+  "_comment": "Minimal SBOM because we use distroless + static Go binary. A typical Node.js or Python app would have 100+ packages here. The small package count is a security feature, not a limitation."
+}

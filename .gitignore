@@ -1,0 +1,26 @@
+# Environment
+.env
+
+# Go
+app/coverage.out
+app/devsecops-demo
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Live scan outputs (committed examples are in examples/)
+examples/*-live.*

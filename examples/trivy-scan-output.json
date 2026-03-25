@@ -1,0 +1,28 @@
+{
+  "SchemaVersion": 2,
+  "ArtifactName": "devsecops-demo:latest",
+  "ArtifactType": "container_image",
+  "Metadata": {
+    "ImageID": "sha256:a1b2c3d4e5f6...",
+    "DiffIDs": ["sha256:..."],
+    "ImageConfig": {
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  },
+  "Results": [
+    {
+      "Target": "devsecops-demo:latest (debian 12.7)",
+      "Class": "os-pkgs",
+      "Type": "debian",
+      "Vulnerabilities": []
+    },
+    {
+      "Target": "usr/local/bin/server",
+      "Class": "lang-pkgs",
+      "Type": "gobinary",
+      "Vulnerabilities": []
+    }
+  ],
+  "_comment": "Clean scan - no CRITICAL or HIGH vulnerabilities found. This is expected because we use distroless base image (minimal attack surface) and a statically compiled Go binary (no CGO dependencies)."
+}

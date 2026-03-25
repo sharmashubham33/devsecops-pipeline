@@ -1,0 +1,33 @@
+$ conftest test bad-dockerfile.docker --policy policies/rego --namespace dockerfile
+
+FAIL - bad-dockerfile.docker - dockerfile - FROM uses :latest tag at line 1. Use a specific version tag (e.g., golang:1.22-alpine)
+FAIL - bad-dockerfile.docker - dockerfile - Dockerfile must include a USER instruction to run as non-root
+FAIL - bad-dockerfile.docker - dockerfile - Missing required label: org.opencontainers.image.title
+FAIL - bad-dockerfile.docker - dockerfile - Missing required label: org.opencontainers.image.description
+FAIL - bad-dockerfile.docker - dockerfile - Missing required label: org.opencontainers.image.source
+
+5 tests, 0 passed, 0 warnings, 5 failures
+
+-----
+
+This is what a developer sees when their Dockerfile violates policies.
+The pipeline BLOCKS the deployment and the developer must fix these issues:
+
+1. Pin the base image to a specific version tag
+2. Add a USER instruction to run as non-root
+3. Add required OCI labels for traceability
+
+The error messages are specific enough that the developer knows exactly
+what to fix without needing to read the policy source code.
+
+-----
+
+$ conftest test app/Dockerfile --policy policies/rego --namespace dockerfile
+
+5 tests, 5 passed, 0 warnings, 0 failures
+
+Our Dockerfile passes all policies because it:
+- Uses golang:1.22-alpine (pinned version)
+- Uses gcr.io/distroless/static-debian12:nonroot (pinned + non-root)
+- Has USER nonroot:nonroot instruction
+- Includes all required OCI labels
